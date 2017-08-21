@@ -57,14 +57,18 @@ public sealed class DataSingleton
     private int _anzLeiter;                                             // Anzahl der im Daten10 aufkommenden Modellleiter
     private Vector3[] _vectorDerLeiterOberkanten;                       // X,Y,Z Vector der Oberkanten
     private Vector3[] _vectorDerLeiterUnterkanten;                      // X,Y,Z Vector der Unterkanten
+    private Vector3 _kleinsteKoordinatenUndHoehe;
     private StreamWriter _logger;                                       // Referenz auf den Streamwriter
     private StreamReader _daten10Leser;                                 // Referenz auf den Streamreader
     private Color[] farbe;                                              // Array zur Farbdarstellung des jeweiligen Netzes
     private Material _standardMaterial;                                 // Material mit dem ein Netz als Standard belegt wird
     private Material _netzMaterial;                                     // Material welches zusätzlich hinzugefügt werden kann
+    private List<List<int>> harfenEintraege;
 
     private static DataSingleton Instanzierung = null;                  // Instanzierung des Singeletons
     private static readonly object ReadLock = new object();
+
+
 
     DataSingleton()
     {
@@ -72,6 +76,29 @@ public sealed class DataSingleton
         SetNetzMaterial();
     }
 
+
+    public List<List<int>> HarfenEintraege
+    {
+        get
+        {
+            return harfenEintraege;
+        }
+
+        set
+        {
+            harfenEintraege = value;
+        }
+    }
+
+    public void SetKleinsteKoordinate(Vector3 kleinsteKoordinate)
+    {
+        _kleinsteKoordinatenUndHoehe = kleinsteKoordinate;
+    }
+
+    public Vector3 GetKleinsteKoordinate()
+    {
+        return _kleinsteKoordinatenUndHoehe;
+    }
 
     public void SetLeiterOberkantenObject(int leiterNummer, GameObject leiter)
     {

@@ -148,8 +148,9 @@ public class ReaderGeometrie
                     }
                     catch (Exception e)
                     {
-                      //  schreibeLogeintrag(buffer.ToString());
-                      //  schreibeLogeintrag(e + " " + buffer[0] + " " + buffer[indexDreiecksBildung] + " " + buffer[indexDreiecksBildung + 1]);
+                        //  schreibeLogeintrag(buffer.ToString());
+                        //  schreibeLogeintrag(e + " " + buffer[0] + " " + buffer[indexDreiecksBildung] + " " + buffer[indexDreiecksBildung + 1]);
+                      
                     }
 
 

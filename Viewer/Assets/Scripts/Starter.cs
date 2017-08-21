@@ -195,6 +195,7 @@ public class Starter : MonoBehaviour
 
             funktionsModell.setCameraParameters(Camera.main, dreiecksNetzOrdner);
 
+            var anzLeiter = 0;
 
             foreach (var datei in ordnerInhalt) 
             {
@@ -208,6 +209,7 @@ public class Starter : MonoBehaviour
                     var zuKuerzen = ".asset";
                     var dateiName = vollstaendigerDateiName.Replace(zuKuerzen, "");
                     var dreiecksNetz = new GameObject(dateiName);
+                    
 
                     dreiecksNetz.AddComponent<MeshFilter>();
                     dreiecksNetz.AddComponent<MeshRenderer>();
@@ -219,6 +221,9 @@ public class Starter : MonoBehaviour
                     dreiecksNetz.transform.parent = dreiecksNetzOrdner.transform;
 
                     SchreibeLogEintrag("Füge hinzu " + aufgeteilterDateiName[2]);
+
+                    if (Int32.Parse(aufgeteilterDateiName[1]) > anzLeiter)
+                        anzLeiter = Int32.Parse(aufgeteilterDateiName[1]);
 
                     if (datei.Name.Contains("OK"))
                     {
@@ -240,6 +245,7 @@ public class Starter : MonoBehaviour
                 
             }
 
+            _datenAblage.setAnzModellLeiter(anzLeiter + 1);
         }
 
 	}

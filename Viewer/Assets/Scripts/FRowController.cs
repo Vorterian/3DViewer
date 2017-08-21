@@ -7,10 +7,12 @@ public class FRowController : MonoBehaviour
 {
 
     public DataSingleton _datenAblage;
-    private List<GameObject> aktiveGameobjectListe; 
+    private List<GameObject> aktiveGameobjectListe;
+    private StreamWriter _logger;
 
     private void Start()
     {
+        _logger = new StreamWriter("FrOW.txt");
 
     }
 
@@ -311,6 +313,58 @@ public class FRowController : MonoBehaviour
             }
 
         }
+
+        if (Input.GetKey(KeyCode.Pause))
+        {
+
+            for (int index = 0; index < _datenAblage.getAnzModellLeiter(); index++)
+            {
+                SchreibeLogEintrag(""+index);
+
+                var aktiveGameobjectListeUK = _datenAblage.GetLeiterUnterKantenObject(index);
+                var aktiveGameobjectListeOK = _datenAblage.GetLeiterOberkantenObject(index);
+
+                SchreibeLogEintrag("Länge der UK " + aktiveGameobjectListeUK.Count.ToString());
+                SchreibeLogEintrag("Länge der OK " + aktiveGameobjectListeOK.Count.ToString());
+
+                for (int indexDerListe = 0; indexDerListe < aktiveGameobjectListeUK.Count; indexDerListe++)
+                {
+                    SchreibeLogEintrag("" + indexDerListe);
+
+                    aktiveGameobjectListeUK[indexDerListe].SetActive(false);
+                    aktiveGameobjectListeOK[indexDerListe].SetActive(false);
+                }
+            }
+
+        }
+
+        if (Input.GetKey(KeyCode.Insert))
+        {
+
+            for (int index = 0; index < _datenAblage.getAnzModellLeiter(); index++)
+            {
+                
+                var aktiveGameobjectListeUK = _datenAblage.GetLeiterUnterKantenObject(index);
+                var aktiveGameobjectListeOK = _datenAblage.GetLeiterOberkantenObject(index);
+
+                for (int indexDerListe = 0; indexDerListe < aktiveGameobjectListeUK.Count; indexDerListe++)
+                {
+                    aktiveGameobjectListeUK[indexDerListe].SetActive(true);
+                    aktiveGameobjectListeOK[indexDerListe].SetActive(true);
+                }
+            }
+
+        }
+
+    }
+
+    void SchreibeLogEintrag(string zuSchreibenderText)
+    {
+
+        _logger.WriteLine("-----------------------------------------------");
+        _logger.WriteLine(zuSchreibenderText);
+        _logger.WriteLine("");
+        _logger.Flush();
 
     }
 

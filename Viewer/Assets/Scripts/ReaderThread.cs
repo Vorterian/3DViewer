@@ -72,13 +72,13 @@ public class ReaderThread
 
                 float xOK = leiterOberkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].x;
                 float yOK = leiterOberkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].y;
-                leiterOberkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].Set(xOK, yOK , (float.Parse(buffer[3]) )*-1);
+                leiterOberkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].Set(xOK, yOK , (float.Parse(buffer[3]) ));
 
 
 
                 float xUK = leiterUnterkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].x;
                 float yUK = leiterUnterkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].y;
-                leiterUnterkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].Set(xUK, yUK , (float.Parse(buffer[2]))*-1);
+                leiterUnterkantePunktMesh[(int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter].Set(xUK, yUK , (float.Parse(buffer[2])));
 
                 setzeFarbe(float.Parse(buffer[5]), ((int.Parse(buffer[1]) - 1) + aktuellerLeiter * anzKnotenProLeiter));
                 

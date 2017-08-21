@@ -408,17 +408,19 @@ public class ModellViewer
 
     }
 
-
     void KonstruiereAngefordertesGameObject()
     {
 
-        // Abfrage ob ein Dreiecksnetz und / oder eine Punktwolke angefordert wurde.
 
-        var anzDerErlaubtenKnoten = 65000; // Maximale Punkteanzahl die von Unity zugelassen wird, liegt bei 
+        var anzDerErlaubtenKnoten = 65000;
 
         _anzDerNetze = _anzKnotenImModell / anzDerErlaubtenKnoten;
         _punkteWolke = new GameObject("Punktewolke_" + _nameDesSpeicherOrtes);
         _dreiecksNetz = new GameObject("Dreiecksnetz_" + _nameDesSpeicherOrtes);
+        _datenAblage.HarfenEintraege = KonstruiereHarfe();
+
+
+        SchreibeLogEintrag(" Harfe erstellt " + _datenAblage.HarfenEintraege.Count);
 
         setCameraParameters(Camera.main, _dreiecksNetz);
 
@@ -433,135 +435,69 @@ public class ModellViewer
 
         if (_datenAblage.getAbfrageDreiecksnetz())
         {
-            for (int aktNetz = 0; aktNetz < _anzModellLeiter; aktNetz++)
-            {
-                KonstruiereOeberUndUnterkantenGameObjekte(aktNetz);
-            }
-
+            KonstruiereOeberUndUnterkantenGameObjekte();
         }
 
-       // _datenAblage.closeLogger();
+        // _datenAblage.closeLogger();
     }
 
 
-    void KonstruiereOeberUndUnterkantenGameObjekte(int aktGruppe)
+    List<List<int>> KonstruiereHarfe()
     {
-        SchreibeLogEintrag("Beginne mit der Meshfüllung");
+        var listeAllerHarfen = new List<List<int>>();
 
-        // Bause das Mesh
-        GameObject dreiecksMeshOK = new GameObject(aktGruppe + "_Grundwasserleiter_OK_" + _nameDesSpeicherOrtes);
+        SchreibeLogEintrag("Erstelle Harfe");
 
-        KonstruiereUnternetze(dreiecksMeshOK, aktGruppe, "Oberkante");
+        var kritischeKnoten = 20000;
 
-        dreiecksMeshOK.transform.parent = _dreiecksNetz.transform;
-
-        //-------------------------------------------------------------
-
-        GameObject dreiecksMeshUK = new GameObject(aktGruppe + "_Grundwasserleiter_UK_" + _nameDesSpeicherOrtes);
-
-        KonstruiereUnternetze(dreiecksMeshUK, aktGruppe, "Unterkante");
-
-        dreiecksMeshUK.transform.parent = _dreiecksNetz.transform;
-
-    }
-
-
-    void KonstruiereUnternetze(GameObject dreiecksMesh, int modellLeiter, String oberOderUnterkante)
-    {
-        SchreibeLogEintrag("Die Anzahl der Knoten pro Modellleiter beträgt " + _anzKnotenProLeiter + " " + _bearbeiteteDreiecke.Length);
-
-
-        if (_anzKnotenProLeiter > 65000) // Anzahl der Knoten ist gleichzeitig die Max Vertice
+        if (_anzKnotenProLeiter > kritischeKnoten)
         {
-            SchreibeLogEintrag("Knotenanzahl übersteigt die maximalen Vertices");
 
-            Color[] myColors = SucheNegativeGeologieUndKopplungen(oberOderUnterkante, modellLeiter);
-
-            var tmpDreiecksPunkte = new List<int>(); // Dreieckspunkte für das Subnetz
-            var tmpVertices = new List<Vector3>();  // Vertices für das Subnetz der Oberkanten
-            var countUnterNetz = 0;
-            var farbenDerStuetzpunkte = new List<Color>();
+            var harfe = new List<int>();
+            var stuetzpunkteDerDreiecke = new List<int>();
 
             for (int i = 0; i < _anzKnotenProLeiter; i++)
             {
-                tmpVertices.Add(new Vector3(-9999, -9999, -9999));
-                farbenDerStuetzpunkte.Add(new Color(0.27f, 0.27f, 0.27f, 0));
+                harfe.Add(-9999);
             }
 
 
-            var counter65K = 0; // Wenn der Counter 65000 erreicht, muss ein neues Netz gebildet werden. Gezählt werden die Vertice Einträge
+            var counter65K = 0;
 
-            for (int i = 0; i < _bearbeiteteDreiecke.Length-3; i = i + 3) // Alle Dreieckspunkte werden durchlaufen
+            for (int aktuellerDreiecksStuetzpunkt = 0; aktuellerDreiecksStuetzpunkt < _bearbeiteteDreiecke.Length - 3; aktuellerDreiecksStuetzpunkt = aktuellerDreiecksStuetzpunkt + 3)
             {
+                var stuetzpunkt1 = _bearbeiteteDreiecke[aktuellerDreiecksStuetzpunkt];
+                var stuetzpunkt2 = _bearbeiteteDreiecke[aktuellerDreiecksStuetzpunkt + 1];
+                var stuetzpunkt3 = _bearbeiteteDreiecke[aktuellerDreiecksStuetzpunkt + 2];
 
-                // if (counter65K <= 65000)
-                if (counter65K <= 65000) // Der Counter zählt die Anzahl der Vertices
+                if (counter65K <= kritischeKnoten && aktuellerDreiecksStuetzpunkt < _bearbeiteteDreiecke.Length - 6)
                 {
-                    var stuetzpunkt1 = _bearbeiteteDreiecke[i];
-                    var stuetzpunkt2 = _bearbeiteteDreiecke[i + 1];
-                    var stuetzpunkt3 = _bearbeiteteDreiecke[i + 2];
 
-
-                    if (!tmpDreiecksPunkte.Contains(_bearbeiteteDreiecke[i])) // Wenn ein Vertice noch nicht in der Liste ist, wird er aufgenommen
-                    {
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt1))
                         counter65K++;
-                    }
 
-
-                    if (!tmpDreiecksPunkte.Contains(_bearbeiteteDreiecke[i + 1]))
-                    {
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt2))
                         counter65K++;
-                    }
 
-
-
-                    if (!tmpDreiecksPunkte.Contains(_bearbeiteteDreiecke[i + 2]))
-                    {
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt3))
                         counter65K++;
-                    }
 
 
-                    if (counter65K <= 65000)
+                    if (counter65K <= kritischeKnoten)
                     {
-                        tmpDreiecksPunkte.Add(stuetzpunkt1);
-                        tmpDreiecksPunkte.Add(stuetzpunkt2);
-                        tmpDreiecksPunkte.Add(stuetzpunkt3);
 
+                        harfe.RemoveAt(stuetzpunkt1);
+                        harfe.Insert(stuetzpunkt1, stuetzpunkt1);
 
-                        farbenDerStuetzpunkte.RemoveAt(stuetzpunkt1);
-                        farbenDerStuetzpunkte.Insert(stuetzpunkt1, myColors[stuetzpunkt1]);
+                        harfe.RemoveAt(stuetzpunkt2);
+                        harfe.Insert(stuetzpunkt2, stuetzpunkt2);
 
-                        farbenDerStuetzpunkte.RemoveAt(stuetzpunkt2);
-                        farbenDerStuetzpunkte.Insert(stuetzpunkt2, myColors[stuetzpunkt2]);
+                        harfe.RemoveAt(stuetzpunkt3);
+                        harfe.Insert(stuetzpunkt3, stuetzpunkt3);
 
-                        farbenDerStuetzpunkte.RemoveAt(stuetzpunkt3);
-                        farbenDerStuetzpunkte.Insert(stuetzpunkt3, myColors[stuetzpunkt3]);
-
-                        if (oberOderUnterkante.Equals("Oberkante"))
-                        {
-
-                            tmpVertices.RemoveAt(stuetzpunkt1);
-                            tmpVertices.Insert(stuetzpunkt1, _vectorDerLeiterOberkanten[stuetzpunkt1 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-
-                            tmpVertices.RemoveAt(stuetzpunkt2);
-                            tmpVertices.Insert(stuetzpunkt2, _vectorDerLeiterOberkanten[stuetzpunkt2 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-
-                            tmpVertices.RemoveAt(stuetzpunkt3);
-                            tmpVertices.Insert(stuetzpunkt3, _vectorDerLeiterOberkanten[stuetzpunkt3 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-
-
-                        }
-                        else
-                        {
-                            tmpVertices.RemoveAt(stuetzpunkt1);
-                            tmpVertices.Insert(stuetzpunkt1, _vectorDerLeiterUnterKanten[stuetzpunkt1 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-
-                            tmpVertices.RemoveAt(stuetzpunkt2);
-                            tmpVertices.Insert(stuetzpunkt2, _vectorDerLeiterUnterKanten[stuetzpunkt2 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-
-                            tmpVertices.RemoveAt(stuetzpunkt3);
-                            tmpVertices.Insert(stuetzpunkt3, _vectorDerLeiterUnterKanten[stuetzpunkt3 + modellLeiter * _anzKnotenProLeiter] - _kleinsteKoordinatenUndHoehe);
-                        }
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt1);
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt2);
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt3);
 
                     }
 
@@ -569,48 +505,27 @@ public class ModellViewer
                 else
                 {
 
-
-                    SchreibeLogEintrag("Baue das Unternetz " + countUnterNetz + " für den Leiter " + modellLeiter + " " + oberOderUnterkante);
-                    // 65k Vertice Einträge werden gesammelt
-
-                    //           1         2        3        4         5          6       7          8        9
-                    // [         1         2     -9999     -9999     64999     -9999     80000     -9999    120000] 
-
-                    // Die Einträge werden in einen 65k Array abgelegt und die Verweise der Dreieckspunkte neu gelegt
-                    //           1         2        3        4         5
-                    // [         1         2     80000    120000     64999] und auf einen 65k Array gelegt
-
-                    countUnterNetz++;
-
-                    SchreibeLogEintrag("Inhalt der unbereinigten Vertices" + tmpVertices.Count);
-                    for (int KnotenUeber65K = 65000; KnotenUeber65K < tmpVertices.Count; KnotenUeber65K++)
+                    for (int KnotenUeber65K = kritischeKnoten; KnotenUeber65K < harfe.Count; KnotenUeber65K++)
                     {
-
-                        if (tmpVertices[KnotenUeber65K].x != -9999) // Wenn der Vertice Index (> 65k) keinen Platzhalter besitzt, kann dieser verschoben werden werden
+                        if (harfe[KnotenUeber65K] != -9999)
                         {
-
-                            for (int KnotenUnter65K = 0; KnotenUnter65K <= 65000; KnotenUnter65K++)
+                            for (int KnotenUnter65K = 0; KnotenUnter65K <= kritischeKnoten; KnotenUnter65K++)
                             {
-                                if (tmpVertices[KnotenUnter65K].x == -9999)
+                                if (harfe[KnotenUnter65K] == -9999)
                                 {
 
-                                    tmpVertices[KnotenUnter65K] = tmpVertices[KnotenUeber65K];
-                                    tmpVertices[KnotenUeber65K] = new Vector3(-9999, -9999, -9999);
+                                    harfe[KnotenUnter65K] = KnotenUeber65K;
+                                    harfe[KnotenUeber65K] = -9999;
 
-                                    farbenDerStuetzpunkte[KnotenUnter65K] = myColors[KnotenUeber65K];
-                                    farbenDerStuetzpunkte[KnotenUeber65K] = new Color(0.27f, 0.27f, 0.27f, 0);
+                                    for (int indexDesDurchlaufes = 0; indexDesDurchlaufes < stuetzpunkteDerDreiecke.Count; indexDesDurchlaufes++)
+                                    {
 
-
-                                        for (int indexDesDurchlaufes = 0; indexDesDurchlaufes < tmpDreiecksPunkte.Count; indexDesDurchlaufes++)
+                                        if (stuetzpunkteDerDreiecke[indexDesDurchlaufes] == KnotenUeber65K)
                                         {
-
-              
-                                        if (tmpDreiecksPunkte[indexDesDurchlaufes] == KnotenUeber65K)
-                                            {
-                                                 tmpDreiecksPunkte[indexDesDurchlaufes] = KnotenUnter65K;
-                                            }
-
+                                            stuetzpunkteDerDreiecke[indexDesDurchlaufes] = KnotenUnter65K;
                                         }
+
+                                    }
 
                                     break;
                                 }
@@ -618,139 +533,174 @@ public class ModellViewer
                         }
                     }
 
-                    var tmpVector = new Vector3(-9999, -9999, -9999);
-                    tmpVertices.RemoveAll(item => item == tmpVector);
 
-                    var tmpColor = new Color(0.27f, 0.27f, 0.27f, 0);
-                    farbenDerStuetzpunkte.RemoveAll(item => item == tmpColor);
+                    var tmpHarfe = -9999;
+                    harfe.RemoveAll(item => item == tmpHarfe);
 
-                    SchreibeLogEintrag("Inhalt der bereinigten Vertices" + tmpVertices.Count);
-                    SchreibeLogEintrag("Inhalt der bereinigten Farben" + farbenDerStuetzpunkte.Count);
+                    var  tmpHarfe2 = new List<int>(harfe);
+                    var tmptmpDreiecke = new List<int>(stuetzpunkteDerDreiecke); ;
+
+                    listeAllerHarfen.Add(tmptmpDreiecke);
+                    listeAllerHarfen.Add(tmpHarfe2);
+
+                    SchreibeLogEintrag("Länge der Harfe " + harfe.Count);
+                    SchreibeLogEintrag("Länge der Dreiecke " + stuetzpunkteDerDreiecke.Count);
+                    SchreibeLogEintrag("Aktueller Index " + aktuellerDreiecksStuetzpunkt + "von " + _bearbeiteteDreiecke.Length);
+                    harfe.Clear();
+                    stuetzpunkteDerDreiecke.Clear();
 
 
-                    // Konstruktion des Subnetzes
-
-                    GameObject unterNetz = new GameObject(modellLeiter + oberOderUnterkante + countUnterNetz);
-                    Mesh mesh = new Mesh();
-
-
-                    try
+                    for (int indexKnotenProLeiter = 0; indexKnotenProLeiter < _anzKnotenProLeiter; indexKnotenProLeiter++)
                     {
-                        unterNetz.AddComponent<MeshFilter>();
-                        unterNetz.AddComponent<MeshRenderer>();
-                        unterNetz.GetComponent<Renderer>().material = _standardMaterial;
-                        mesh.vertices = tmpVertices.ToArray(); // Einfügen der erzeugten Vertices
-             
-                        try
-                        {
-                            mesh.colors = farbenDerStuetzpunkte.ToArray();
-                        }
-                        catch(Exception e)
-                        {
-                            SchreibeLogEintrag(e.ToString());
-                        }
-                        mesh.triangles = tmpDreiecksPunkte.ToArray(); // Einfügen der bearbeiteten Dreieckspunkte
-                        unterNetz.GetComponent<MeshFilter>().mesh = mesh;
-                        unterNetz.AddComponent<MeshCollider>();
-
-
-                        if (oberOderUnterkante.Equals("Oberkante"))
-                        {
-                            unterNetz.name = modellLeiter.ToString() + "-OK";
-                        }
-                        else
-                        {
-                            unterNetz.name = modellLeiter.ToString() + "-UK";
-                        }
-
-
-                       
-                        unterNetz.transform.parent = dreiecksMesh.transform;
-
-                        SchreibeLogEintrag("Geometrie des Netzes gebaut und übertragen");
-
-                        if (oberOderUnterkante.Equals("Oberkante"))
-                        {
-                            UnityEditor.AssetDatabase.CreateAsset(unterNetz.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_OK" + countUnterNetz + ".asset");
-                            _datenAblage.SetLeiterOberkantenObject(modellLeiter, unterNetz);
-                        }
-                        else
-                        {
-                            UnityEditor.AssetDatabase.CreateAsset(unterNetz.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_UK" + countUnterNetz + ".asset");
-                            _datenAblage.SetLeiterUnterKantenObject(modellLeiter, unterNetz);
-                        }
-
-                        SchreibeLogEintrag("Netz abgelegt");
-
-                        tmpDreiecksPunkte.Clear();
-                        tmpVertices.Clear();
-                        farbenDerStuetzpunkte.Clear();
-
-
-
-                        for (int aktuellerKnoten = 0; aktuellerKnoten < _anzKnotenProLeiter; aktuellerKnoten++)
-                        {
-                            tmpVertices.Add(new Vector3(-9999, -9999, -9999));
-                            farbenDerStuetzpunkte.Add(new Color(0.27f, 0.27f, 0.27f, 0));
-                        }
-
-                        counter65K = 0;
-
-                        SchreibeLogEintrag("Vectoren bereinigt");
-                    }
-                    catch(Exception e)
-                    {
-                        SchreibeLogEintrag(e.ToString());
+                        harfe.Add(-9999);
                     }
 
+                    counter65K = 0;
 
                     
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt1))
+                        counter65K++;
+
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt2))
+                        counter65K++;
+
+                    if (!stuetzpunkteDerDreiecke.Contains(stuetzpunkt3))
+                        counter65K++;
+                       
+
+                    if (counter65K <= kritischeKnoten)
+                    {
+
+                        harfe.RemoveAt(stuetzpunkt1);
+                        harfe.Insert(stuetzpunkt1, stuetzpunkt1);
+
+                        harfe.RemoveAt(stuetzpunkt2);
+                        harfe.Insert(stuetzpunkt2, stuetzpunkt2);
+
+                        harfe.RemoveAt(stuetzpunkt3);
+                        harfe.Insert(stuetzpunkt3, stuetzpunkt3);
+
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt1);
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt2);
+                        stuetzpunkteDerDreiecke.Add(stuetzpunkt3);
+
+                    }
+                     
                 }
 
             }
+
+            for (int indexDerHarfe = 0; indexDerHarfe < listeAllerHarfen.Count; indexDerHarfe++)
+            {
+               SchreibeLogEintrag(listeAllerHarfen[indexDerHarfe].Count.ToString());
+            }
+
+            return listeAllerHarfen;
         }
         else
         {
-            SchreibeLogEintrag("Aus diesem Grund füge ich die Standarddinge hinzu");
-            dreiecksMesh.AddComponent<MeshFilter>();
+            return listeAllerHarfen;
+        }
 
-            if (oberOderUnterkante.Equals("Oberkante"))
+    }
+
+
+    void KonstruiereOeberUndUnterkantenGameObjekte()
+    {
+        SchreibeLogEintrag("Beginne mit der Meshfüllung");
+
+        var listeDerThreads = new List<Thread>();
+        var listeDerThreadObjecte = new List<ThreadKonstruiereUnternetze>();
+
+        for (int aktModellLeiter = 0; aktModellLeiter < _anzModellLeiter; aktModellLeiter++)
+        {
+            SchreibeLogEintrag("Bearbeite folgenden Leiter " + aktModellLeiter);
+
+            var farbeDerOberkante = SucheNegativeGeologieUndKopplungen("Oberkante", aktModellLeiter);
+            var farbeDerUnterkante = SucheNegativeGeologieUndKopplungen("Unterkante", aktModellLeiter);
+
+            SchreibeLogEintrag("Farben erzeugt");
+
+            for (int indexHarfe = 0; indexHarfe < _datenAblage.HarfenEintraege.Count ; indexHarfe = indexHarfe + 2)
             {
-                dreiecksMesh.GetComponent<MeshFilter>().mesh = FuelleDreiecksMesh(oberOderUnterkante, modellLeiter, _vectorDerLeiterOberkanten);
-            }
-            else
-            {
-                dreiecksMesh.GetComponent<MeshFilter>().mesh = FuelleDreiecksMesh(oberOderUnterkante, modellLeiter, _vectorDerLeiterUnterKanten);
+                SchreibeLogEintrag("Und folgendes Unternetz " + indexHarfe);
+
+                var threadUnterNetzKonstruktionOK = new ThreadKonstruiereUnternetze (indexHarfe, aktModellLeiter, "Oberkante", _datenAblage, farbeDerOberkante);
+                var startThreadLastOK = new Thread(new ThreadStart(threadUnterNetzKonstruktionOK.read));
+                listeDerThreadObjecte.Add(threadUnterNetzKonstruktionOK);
+                listeDerThreads.Add(startThreadLastOK);
+                startThreadLastOK.Start();
+
+                var threadUnterNetzKonstruktionUK = new ThreadKonstruiereUnternetze(indexHarfe, aktModellLeiter, "Unterkante", _datenAblage, farbeDerUnterkante);
+                var startThreadLastUK = new Thread(new ThreadStart(threadUnterNetzKonstruktionUK.read));
+                listeDerThreadObjecte.Add(threadUnterNetzKonstruktionUK);
+                listeDerThreads.Add(startThreadLastUK);
+                startThreadLastUK.Start();
             }
 
-            dreiecksMesh.AddComponent<MeshCollider>();
-
-            if (oberOderUnterkante.Equals("Oberkante"))
-            {
-                dreiecksMesh.name = modellLeiter.ToString() + "-OK";
-            }
-            else
-            {
-                dreiecksMesh.name = modellLeiter.ToString() + "-UK";
-            }
-
-            dreiecksMesh.AddComponent<MeshRenderer>();
-            dreiecksMesh.GetComponent<Renderer>().material = _standardMaterial;
-
-            if (oberOderUnterkante.Equals("Oberkante"))
-            {
-                SchreibeLogEintrag("Speichere die Oberkante " + dreiecksMesh.name);
-                UnityEditor.AssetDatabase.CreateAsset(dreiecksMesh.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_OK"  + ".asset");
-                _datenAblage.SetLeiterOberkantenObject(modellLeiter, dreiecksMesh);
-            }
-            else
-            {
-                SchreibeLogEintrag("Speichere die Unterkante");
-                UnityEditor.AssetDatabase.CreateAsset(dreiecksMesh.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_UK"  + ".asset");
-                _datenAblage.SetLeiterUnterKantenObject(modellLeiter, dreiecksMesh);
-            }
 
         }
+
+        SchreibeLogEintrag("Warte auf Threads");
+
+        // Wenn ein Thread fertig ist, wird dessen Ergebnis ausgelesen und das GameObject gebaut 
+        for (int zeigerAufDenThreadIndex = 0; zeigerAufDenThreadIndex < listeDerThreads.Count; zeigerAufDenThreadIndex++)
+        {
+            listeDerThreads[zeigerAufDenThreadIndex].Join(); // Warten auf den Thread
+
+            SchreibeLogEintrag("Folgender Thread ist fertig " + zeigerAufDenThreadIndex);
+
+
+            GameObject unterNetz;
+            Mesh mesh = new Mesh();
+
+            // Auslesen der Daten
+            var modellLeiter = listeDerThreadObjecte[zeigerAufDenThreadIndex].getErgebnis().ModellLeiter;
+            var oberOderUnterkante = listeDerThreadObjecte[zeigerAufDenThreadIndex].getErgebnis().OberOderUnterkante;
+            var dreiecksPunkte = listeDerThreadObjecte[zeigerAufDenThreadIndex].getErgebnis().DreiecksPunkte;
+            var vertices = listeDerThreadObjecte[zeigerAufDenThreadIndex].getErgebnis().TmpVertices;
+            var farben = listeDerThreadObjecte[zeigerAufDenThreadIndex].getErgebnis().FarbenDerStuetzpunkte;
+
+            SchreibeLogEintrag("" + modellLeiter + " " + oberOderUnterkante + " " + vertices.Count + " "+ farben .Count+ " " + dreiecksPunkte.Count + " ");
+
+            if (oberOderUnterkante.Equals("Oberkante"))
+            {
+                unterNetz = new GameObject(modellLeiter + oberOderUnterkante + zeigerAufDenThreadIndex);
+                
+            }
+            else
+            {
+                unterNetz = new GameObject(modellLeiter + oberOderUnterkante + zeigerAufDenThreadIndex);
+
+
+            }
+
+            unterNetz.AddComponent<MeshFilter>();
+            unterNetz.AddComponent<MeshRenderer>();
+            unterNetz.GetComponent<Renderer>().material = _standardMaterial;
+            mesh.vertices = vertices.ToArray();
+            mesh.colors = farben.ToArray();
+            mesh.triangles = dreiecksPunkte.ToArray();
+            unterNetz.GetComponent<MeshFilter>().mesh = mesh;
+            unterNetz.AddComponent<MeshCollider>();
+
+
+            if (oberOderUnterkante.Equals("Oberkante"))
+            {
+                unterNetz.name = modellLeiter.ToString() + "-OK";
+                UnityEditor.AssetDatabase.CreateAsset(unterNetz.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_OK" + zeigerAufDenThreadIndex + ".asset");
+                _datenAblage.SetLeiterOberkantenObject(modellLeiter, unterNetz);
+            }
+            else
+            {
+                unterNetz.name = modellLeiter.ToString() + "-UK";
+                UnityEditor.AssetDatabase.CreateAsset(unterNetz.GetComponent<MeshFilter>().mesh, "Assets/Resources/Dreiecksnetze/" + _nameDesSpeicherOrtes + @"/" + _nameDesSpeicherOrtes + "_" + modellLeiter + "_UK" + zeigerAufDenThreadIndex + ".asset");
+                _datenAblage.SetLeiterUnterKantenObject(modellLeiter, unterNetz);
+            }
+
+            unterNetz.transform.parent = _dreiecksNetz.transform;
+        }
+
     }
 
     string[] UnterteileKarte(string geleseneZeile, int laenge)
@@ -863,6 +813,7 @@ public class ModellViewer
                 {
     //                schreibeLogeintrag(farbenDerStuetzpunkte[knoten].ToString() + " RED " + LeiterUnterkante[AktLeiter * AnzKnotenProLeiter + knoten].z + " " + LeiterOberkante[(AktLeiter + 1) * AnzKnotenProLeiter + knoten].z + " " + AktLeiter + " " + knoten);
                     farbenDerStuetzpunkte[knoten] = Color.red;
+                    SchreibeLogEintrag(_vectorDerLeiterUnterKanten[aktLeiter * _anzKnotenProLeiter + knoten].z.ToString() + " " + _vectorDerLeiterOberkanten[(aktLeiter + 1) * _anzKnotenProLeiter + knoten].z.ToString());
                 }
                 else
                 {
@@ -1039,6 +990,7 @@ public class ModellViewer
 
         _kleinsteKoordinatenUndHoehe.z = 0;
 
+        _datenAblage.SetKleinsteKoordinate(_kleinsteKoordinatenUndHoehe);
         SchreibeLogEintrag("Kleinste Koordinate "  + (_kleinsteKoordinatenUndHoehe.x).ToString() + " " + (_kleinsteKoordinatenUndHoehe.y).ToString() + " " + (_kleinsteKoordinatenUndHoehe.z).ToString() );
 
 	}
